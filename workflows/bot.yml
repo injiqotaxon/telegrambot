@@ -1,0 +1,30 @@
+name: 24/7 Uzbek Bot
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */5 * * *'  # Har 6 soatda qayta ishga tushib, 24/7 bo'lib ko'rinadi
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350  # 6 soatgacha ishlaydi, keyin cron qayta yoqadi
+    steps:
+      - name: Kodni olish
+        uses: actions/checkout@v3
+
+      - name: Python sozlash
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Kutubxonalarni o'rnatish
+        run: pip install -r requirements.txt
+
+      - name: Botni ishga tushirish
+        run: python bot.py
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
