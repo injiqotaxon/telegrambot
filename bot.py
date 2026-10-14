@@ -11,7 +11,7 @@ if not GEMINI_API_KEY or not TELEGRAM_BOT_TOKEN:
     raise ValueError("Secrets qo'yilmagan! GitHub Settings > Secrets ga qarang")
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-3.8-flash")
 
 SYSTEM_PROMPT = """
 Sen o'zbek tilida (lotin alifbosida) gaplashadigan aqlli yordamchisan.
