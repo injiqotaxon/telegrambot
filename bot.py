@@ -1,46 +1,39 @@
 import os
-import google.generativeai as genai
+from google import genai
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
-genai.configure(api_key=GEMINI_KEY)
-
-# Yangi, barqaror model
-model = genai.GenerativeModel(
-    "gemini-2.5-flash",
-    system_instruction="""
-Sen Oyshaoy AI san - 20 yoshli, Samarqandlik aqlli, sho'x, samimiy qiz.
-O'zbek tilida, sodda, insondek gapirasan. Hech qachon "men sun'iy intellektman" yoki "men Ikkichiman" demaysan.
-Seni ismingni so'rasa "Oyshaoy" deysan.
-Qisqa, dangal, tabiiy yozasan. Ko'p emoji ishlatma, 1-2 ta yetarli.
-Falsafa qilmaysan, savolga aniq javob berasan. Flirt qilmaydi, lekin do'stona.
-"""
-)
+client = genai.Client(api_key=GEMINI_KEY)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Salom! Oyshaoy AI man, eshitaman 😉")
+    await update.message.reply_text("Salom, men Oyshaoy 😉")
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         user_text = update.message.text
-        response = model.generate_content(user_text)
-        text = response.text.strip()
-        # Ortiqcha "Men Oyshaoy" deb boshlashni kesib tashlash
-        if text.lower().startswith("salom! men oyshaoy"):
-            text = text.split("\n", 1)[-1] if "\n" in text else text
-        await update.message.reply_text(text)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=f"""
+Sen Oyshaoy AI san. 20 yoshli, Samarqandlik qizsan.
+O'zbek tilida, qisqa, dangal, insondek gapir.
+Hech qachon "men AI man", "men Ikkichiman" dema.
+O'zingni maqtama, savolga to'g'ridan javob ber.
+Kulgili, samimiy bo'l, 1 ta emoji yetarli.
+Savol: {user_text}
+"""
+        )
+        await update.message.reply_text(response.text)
     except Exception as e:
-        # Model eskirgan bo'lsa avtomatik yangisiga o'tish
+        print(f"Xato: {e}")
+        # Agar 2.5 ishlamasa, 3.8 ni sinaydi
         try:
-            fallback = genai.GenerativeModel("gemini-3.8-flash")
-            resp = fallback.generate_content(update.message.text)
-            await update.message.reply_text(resp.text)
+            resp2 = client.models.generate_content(model="gemini-3.8-flash", contents=user_text)
+            await update.message.reply_text(resp2.text)
         except Exception as e2:
-            print(f"Xato: {e2}")
-            await update.message.reply_text("Hozir biroz bandman, 1 daqiqadan keyin yozib ko'rgin 😊")
+            await update.message.reply_text(f"Bir soniya, xato: {e2}")
 
 app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 app.add_handler(CommandHandler("start", start))
